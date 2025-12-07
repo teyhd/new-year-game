@@ -84,6 +84,21 @@ app.get('/',async (req,res)=>{
     });
   })
 
+app.get('/compare',async (req,res)=>{
+    res.render('index2',{
+      title: 'Сравнение изображений'
+    });
+  })
+
+// API endpoint для получения процента сходства
+app.get('/prz',async (req,res)=>{
+    // Генерируем случайный процент (50-100%)
+    // Можешь заменить на реальный анализ изображений
+    const percentage = Math.floor(Math.random() * 91) + 10;
+    mlog('Запрос /prz - возвращаем процент сходства:', percentage);
+    res.json({ percentage });
+  })
+
 async function start(){
     try {
         app.listen(PORT,()=> {

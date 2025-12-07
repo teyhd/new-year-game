@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Сравнение изображений</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse-load {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    .animate-pulse-load {
+      animation: pulse-load 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes count-up {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .animate-count {
+      animation: count-up 0.3s ease-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+  <div class="w-full min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="sticky top-0 z-10 backdrop-blur-md bg-slate-950/70 border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <h1 class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+          Сходство изображений
+        </h1>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
+        
+        <!-- Images and similarity scale -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+          <!-- Left image (half screen) -->
+          <div class="lg:col-span-2 flex items-center justify-center">
+            <div class="relative w-full aspect-square rounded-xl overflow-hidden border-2 border-slate-700 bg-slate-800 group">
+              <img 
+                id="imageLeft"
+                src="https://images.pexels.com/photos/2706379/pexels-photo-2706379.jpeg?auto=compress&cs=tinysrgb&w=800" 
+                alt="Изображение 1"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div class="absolute bottom-3 left-3 px-3 py-1 bg-black/60 rounded-lg text-sm">
+                Изображение 1
+              </div>
+            </div>
+          </div>
+
+          <!-- Center: Similarity scale -->
+          <div class="lg:col-span-1 flex flex-col items-center justify-center gap-4">
+            <div class="text-sm uppercase tracking-widest text-slate-400 font-semibold">
+              Сходство
+            </div>
+            
+            <!-- Percentage display -->
+            <div class="text-5xl font-bold">
+              <span id="percentageValue" class="text-transparent bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text">
+                0
+              </span><span class="text-2xl text-slate-400">%</span>
+            </div>
+
+            <!-- Vertical scale bar -->
+            <div class="relative w-12 h-48 bg-slate-800 border-2 border-slate-700 rounded-full overflow-hidden">
+              <!-- Scale fill -->
+              <div 
+                id="scaleFill"
+                class="absolute bottom-0 w-full bg-gradient-to-t from-cyan-500 to-blue-400 transition-all duration-500 ease-out"
+                style="height: 0%"
+              ></div>
+              <!-- Scale marks -->
+              <div class="absolute inset-0 flex flex-col justify-between text-xs text-slate-500 px-1 py-2">
+                <span>100</span>
+                <span>50</span>
+                <span>0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right image (half screen) -->
+          <div class="lg:col-span-2 flex items-center justify-center">
+            <div class="relative w-full aspect-square rounded-xl overflow-hidden border-2 border-slate-700 bg-slate-800 group">
+              <img 
+                id="imageRight"
+                src="https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?auto=compress&cs=tinysrgb&w=800" 
+                alt="Изображение 2"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div class="absolute bottom-3 right-3 px-3 py-1 bg-black/60 rounded-lg text-sm">
+                Изображение 2
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compare button -->
+        <div class="flex justify-center">
+          <button 
+            id="compareBtn"
+            onclick="compareImages()"
+            class="px-8 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <span id="btnText">Начать анализ</span>
+            <svg id="btnSpinner" class="hidden w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Status message -->
+        <div class="mt-4 text-center">
+          <p id="statusMsg" class="text-sm text-slate-400 h-5"></p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let isAnalyzing = false;
+    const ANIMATION_DURATION = 3000; // Время анимации в миллисекундах (3 сек)
+
+    async function compareImages() {
+      if (isAnalyzing) return;
+      
+      isAnalyzing = true;
+      const btn = document.getElementById('compareBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+      const statusMsg = document.getElementById('statusMsg');
+      
+      // Disable button and show loading state
+      btn.disabled = true;
+      btnText.textContent = 'Идет анализ...';
+      btnSpinner.classList.remove('hidden');
+      statusMsg.textContent = 'Анализируем изображения...';
+
+      try {
+        // Fetch similarity percentage from server
+        const response = await fetch('/prz');
+        const data = await response.json();
+        const percentage = Math.min(100, Math.max(0, data.percentage || 0));
+
+        // Animate the percentage counter
+        animateCounter(0, percentage, 2000);
+
+        // Animate the scale bar
+        animateScale(0, percentage, 2000);
+
+        statusMsg.textContent = 'Анализ завершен!';
+
+        // Update button text after animation
+        setTimeout(() => {
+          btnText.textContent = 'Повторить анализ';
+          btnSpinner.classList.add('hidden');
+          btn.disabled = false;
+          isAnalyzing = false;
+        }, 2000);
+
+      } catch (error) {
+        console.error('Error:', error);
+        statusMsg.textContent = 'Ошибка при анализе. Попробуйте снова.';
+        btnText.textContent = 'Повторить анализ';
+        btnSpinner.classList.add('hidden');
+        btn.disabled = false;
+        isAnalyzing = false;
+      }
+    }
+    function animateCounter(start, end, duration = ANIMATION_DURATION) {
+      const element = document.getElementById('percentageValue');
+      const startTime = Date.now();
+
+      function update() {
+        const now = Date.now();
+        const progress = Math.min((now - startTime) / duration, 1);
+        const current = Math.floor(start + (end - start) * progress);
+        
+        element.textContent = current;
+        
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        }
+      }
+
+      update();
+    }
+
+    function animateScale(start, end, duration = ANIMATION_DURATION) {
+      const scaleElement = document.getElementById('scaleFill');
+      const startTime = Date.now();
+
+      function update() {
+        const now = Date.now();
+        const progress = Math.min((now - startTime) / duration, 1);
+        const current = start + (end - start) * progress;
+        
+        scaleElement.style.height = current + '%';
+        
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        }
+      }
+
+      update();
+    }
+  </script>
+</body>
+</html>
